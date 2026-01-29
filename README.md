@@ -2,73 +2,85 @@
 
 ## Overview
 This project implements a reject verification system for a conveyor-based machine using Siemens LOGO!.  
-The system runs as a Positive Security Model.
-The system monitors product detection and reject confirmation to ensure that rejected products are physically removed.  
-If a reject is not verified, the machine is safely stopped and a fault is indicated.
+The system monitors product detection and reject confirmation to ensure safe operation.  
 
-Version 2 focuses on improving reset safety, fault clarity, and operator feedback.
+The machine stops automatically when a fault condition is detected, including:
+
+- Reject not verified by the reject sensor
+- Two products simultaneously present in the reject zone
+- Three consecutive rejected products
+- Unknown outfeed caused by product or outfeed sensor errors
+
+Visual indicators (LEDs and traffic lights) provide operator feedback for system state and fault conditions.  
+Reset is only permitted when the machine is stopped to prevent unsafe operation.  
+The system follows a **positive security (fail-safe) model**, ensuring that any unverified or ambiguous condition results in a safe stop.
 
 ---
 
 ## Core Functionality
 - Detects products entering the reject zone
 - Verifies that rejected products trigger the reject confirmation sensor
-- Stops the machine if a reject is not verified
-- Prevents unsafe resets while the machine is running
-- Provides visual feedback via LED / traffic light outputs
+- Stops the machine on fault conditions
+- Prevents unsafe resets during operation
+- Provides visual feedback via LEDs and traffic lights
+- Supports testing with extended timer durations; timers will be adjusted for real-world commissioning
 
 ---
 
-## Key Design Changes in v2
+## Logical I/O Mapping
 
-### Reset Safety
-- Reset logic is gated through an AND condition requiring **Stop Mode active** (B023)
-- Prevents timers, counters, and latches from being reset while the machine is running
-- Ensures predictable and safe system behaviour during operation
+### Inputs
+| Signal | Description |
+|------|------------|
+| Camera | Camera classification input (Good / Bad) |
+| ProductSensor | Detects product entering reject zone |
+| RejectSensor | Confirms reject actuation |
+| OutfeedSensor | Detects product leaving conveyor |
+| StopButton | Operator stop input |
+| ResetButton | Operator reset input |
+| StartSignal | Conveyor start signal |
 
-### Reject Zone Fault Handling
-- Reworked the "2 products in reject zone" fault using **counter-based logic**
-- Chosen due to LOGO! limitations (no support for negative values)
-- Counter approach proved easier to follow and reduced unexpected stoppages compared to a logic-loop implementation
+### Outputs
+| Signal | Description |
+|------|------------|
+| PusherReject | Reject pusher actuator |
+| Stop | Machine stop / interlock |
+| LEDRedStop | Stop / fault LED |
+| TrafficRed | Fault indication |
+| TrafficYellow | Ready / transitional state |
+| TrafficGreen | Running state |
 
-### Visual Indicators
-- Added LED and traffic light outputs to indicate:
-  - Ready state
-  - Running state
-  - Fault / stop condition
-- Indicators are driven by system state and fault conditions only (no independent control logic)
+---
+
+## Internal Flags
+| Flag | Purpose |
+|----|--------|
+| Fault_UnknownOut | Unknown product state detected |
+| BadCamera | Camera fault or invalid classification |
+| Fault_ConsecutiveRejects | Multiple rejects detected consecutively |
+| Fault_RejectZoneOccupied | Reject zone blocked |
+| Fault_RejectNotVerified | Reject not confirmed by sensor |
+| ResetOnStop | Enables reset only when stopped |
+
+---
+
+## Timing Parameters (Commissioning Values)
+- Timers are set to **extended durations** for testing and manual triggering
+- In production, these values would be reduced according to conveyor speed and sensor response
+
+| Timer | Function | Test Value |
+|-----|--------|-----------|
+| FaultRejectNotVerified (B028) | Delay before triggering reject-not-verified fault | 2.0 s |
+| FaultNoOutfeedGoodProduct (B031) | Delay before fault on missing outfeed | 2.0 s |
+| Reject Pusher (B021) | Delay and pulse for reject actuator | Delay: 50 ms, Pulse: 10 ms |
 
 ---
 
 ## System States
-- **Stopped:** System is safe, reset is permitted
-- **Ready:** Reset completed, waiting for Start input
-- **Running:** Conveyor moving, reject logic active
-- **Fault:** Reject not verified or zone error detected; machine stopped
-
----
-
-## Inputs and Outputs (High-Level)
-
-### Inputs
-- Product sensor
-- Reject confirmation sensor
-- Start input
-- Stop input
-- Reset input
-
-### Outputs
-- Stop output (machine interlock)
-- Reject actuator (pusher)
-- LED / traffic light indicators
-
----
-
-## Known Limitations / Notes
-- Start / Go input does not influence reject logic  
-  - Used only to indicate conveyor movement via lights
-- Reset returns the system to a ready state; Start must be pressed to resume operation
-- No customer or machine-specific details included due to confidentiality
+- **Stopped:** System is safe; reset is permitted
+- **Ready:** Reset completed; waiting for Start input
+- **Running:** Conveyor moving; reject logic active
+- **Fault:** Any monitored fault detected; machine stopped and visual indicators active
 
 ---
 
