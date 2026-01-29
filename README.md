@@ -13,7 +13,7 @@ The machine stops automatically when a fault condition is detected, including:
 
 Visual indicators (LEDs and traffic lights) provide operator feedback for system state and fault conditions.  
 Reset is only permitted when the machine is stopped to prevent unsafe operation.  
-The system follows a **positive security (fail-safe) model**, ensuring that any unverified or ambiguous condition results in a safe stop.
+The system follows a positive security (fail-safe) model, ensuring that any unverified or ambiguous condition results in a safe stop.
 
 ---
 
