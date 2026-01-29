@@ -56,7 +56,7 @@ The system follows a positive security (fail-safe) model, ensuring that any unve
 | Flag | Purpose |
 |----|--------|
 | Fault_UnknownOut | Unknown product state detected |
-| BadCamera | Camera fault or invalid classification |
+| BadCamera | Product seen but no good signal from camera system |
 | Fault_ConsecutiveRejects | Multiple rejects detected consecutively |
 | Fault_RejectZoneOccupied | Reject zone blocked |
 | Fault_RejectNotVerified | Reject not confirmed by sensor |
